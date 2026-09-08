@@ -1,0 +1,73 @@
+ALTER PROCEDURE [dbo].[sp_extract_monitor]
+@SQL_TASK NVARCHAR(30)
+AS
+BEGIN
+	
+	DECLARE @TODAY DATE
+	SET @TODAY = CAST(GETDATE() AS DATE)
+
+	DECLARE  @container TABLE ([ID] nvarchar(max),[TS] datetime)
+	Insert into @container
+	select ID, TS from dummy.dbo.extract_log where cast(ts as date) = @TODAY
+
+	declare @allRecords float, @todayRecors float
+	set @allRecords =
+		(
+			Select 
+				Count(ID)
+			FROM 
+				dummy.dbo.extracts_all 
+			where 
+				USEDIN like ''+@SQL_TASK+'%'
+		)
+	set @todayRecors =
+			(
+			Select 
+				COUNT(ID) 
+			from 
+				dummy.dbo.extracts_all 
+			where
+				USEDIN like ''+@SQL_TASK+'%' 
+				AND ID in (Select ID from @container)
+			)
+
+	if @allRecords !=@todayRecors
+		BEGIN
+
+			SELECT   
+				'' as  [Ran already?]
+				,cast(@todayRecors as nvarchar(10)) +'/' + cast(@allRecords as nvarchar(10)) as [# ran display / # total displays]
+				,a.*
+				,'' as [ROWS]
+				,'' as [RUNTIME]
+			FROM 
+				dummy.dbo.extracts_all  a
+			where 
+				a.ID not in (select ID from @container)
+				AND USEDIN like '' + @SQL_TASK + '%'
+			
+
+			Union all
+
+			SELECT 
+				'Ran Today' as [Ran already?]
+				,cast(@todayRecors as nvarchar(10)) +'/' + cast(@allRecords as nvarchar(10)) as [# ran display / # total displays]
+				,a.* 
+				,b.[ROWS]
+				,b.RUNTIME
+			FROM 
+				dummy.dbo.extracts_all a
+			left join
+				dummy.dbo.extract_log b on a.ID = b.ID
+			where 
+				a.ID in (select ID from @container)
+				AND CAST(b.TS as date) = @TODAY
+				AND USEDIN like '' + @SQL_TASK + '%'
+			order by [Ran already?] asc, [AWS] ASC
+
+		END
+	else
+		BEGIN
+			PRINT 'All tasks have been run for  ' + @SQL_TASK + ' job!'
+		END
+END
