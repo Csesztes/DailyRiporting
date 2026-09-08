@@ -1,1 +1,7 @@
-This SQL stored procedure is used for the daily monitoring. It checks which tables have been already uploaded from Every angle (AWS) server to SQL server.
+I use these SQL stored procedures for my daily monitoring.
+
+Dailymonitoring: It checks which sql job has ran already or still running on our server.
+
+sp_extract_monitor: This script checks and compares what sql tables have been extracted from AWS (every angle server) to our sql server on a given day. Once all the tables have been extracted for a given job, the sql job starts autoamtically.
+
+sp_mass_extract_monitor: THis script uses the previous sp_extract monitor stored procedure and just loops trough the given criteria specified in the mass stored procedure.
