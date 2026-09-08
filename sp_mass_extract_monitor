@@ -1,0 +1,35 @@
+ALTER procedure [dbo].[sp_mass_run_extract_monitor]
+AS
+BEGIN
+	
+	DECLARE @TBL_JOBS_CONTAINER TABLE ([RowNum] float,[Jobname] nvarchar(max))
+	Insert into @TBL_JOBS_CONTAINER
+	Values 
+		(1,'EAReports1')
+		,(2,'EAReports2')
+		,(3,'SOP')
+		,(4,'IFOT')
+		,(5,'Dashboards')
+		,(6,'Demand Planning')
+		,(7,'EAReports3')
+
+	DECLARE @lastrow int
+	set @lastrow = (select max([RowNum]) from @TBL_JOBS_CONTAINER)
+
+	Declare @counter int
+	set @counter = 1
+
+	declare @currentVal nvarchar(max)
+	declare @today nvarchar(max)
+	set @today = cast(getdate() as nvarchar(max))
+
+	while @counter <= @lastrow
+	begin
+		set @currentVal = (select [Jobname] from @TBL_JOBS_CONTAINER where [RowNum] = @counter)
+		exec [sp_extract_monitor] @currentVal 
+
+
+		set @counter = @counter +1
+	end
+
+END
