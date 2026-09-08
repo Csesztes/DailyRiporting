@@ -1,0 +1,29 @@
+USE [MappingTables]
+GO
+
+
+ALTER PROC [dbo].[sp_extract_runtimes]
+(
+ @SINGLE_REPORT_SWITCH BIT
+,@SINGLE_DATE_SWITH BIT
+,@MYDATE DATE 
+,@JOBNAME NVARCHAR(MAX) =''
+)
+AS
+BEGIN
+	
+	IF @SINGLE_DATE_SWITH = 1
+		BEGIN
+			IF @SINGLE_REPORT_SWITCH = 1
+				select * , Datediff(Minute,[Start time],[End time]) as 'Runtime (min)' from [dummy].[dbo].[sample_Table] WHERE [Query] = @JOBNAME AND CAST([Modeldata_Timestamp] AS date) = @MYDATE ORDER BY Modeldata_Timestamp DESC
+			ELSE
+				select * ,  Datediff(Minute,[Start time],[End time]) as 'Runtime (min)' from [dummy].[dbo].[sample_Table] WHERE CAST([Modeldata_Timestamp] AS date) = @MYDATE ORDER BY Modeldata_Timestamp DESC
+		END
+	ELSE
+		BEGIN
+			IF @SINGLE_REPORT_SWITCH = 1
+				select * ,  Datediff(Minute,[Start time],[End time]) as 'Runtime (min)' from [dummy].[dbo].[sample_Table] WHERE [Query] = @JOBNAME ORDER BY Modeldata_Timestamp DESC
+			ELSE
+				select * ,  Datediff(Minute,[Start time],[End time]) as 'Runtime (min)' from [dummy].[dbo].[sample_Table] ORDER BY Modeldata_Timestamp DESC
+		END
+END
