@@ -1,0 +1,58 @@
+ALTER PROCEDURE GetOrdersByDate
+    @ActualTable SYSNAME,
+    @ArchiveTable SYSNAME,  
+    @modelDate_start DATE,
+    @modelDate_end DATE,
+    @date_to_check_actual NVARCHAR(MAX),
+    @MONTH_COUNTER INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @SQL NVARCHAR(MAX);
+    DECLARE @COUNTER INT = 0;
+
+    WHILE @COUNTER <= @MONTH_COUNTER
+    BEGIN
+        SET @SQL = '
+            INSERT INTO ' + @ArchiveTable + '
+            SELECT *
+            FROM ' + @ActualTable + '
+            WHERE CAST(' + @date_to_check_actual + ' AS DATE)
+                BETWEEN DATEADD(MONTH, @COUNTER, @modelDate_start)
+                    AND DATEADD(MONTH, @COUNTER, @modelDate_end);
+
+            DELETE
+            FROM ' + @ActualTable + '
+            WHERE CAST(' + @date_to_check_actual + ' AS DATE)
+                BETWEEN DATEADD(MONTH, @COUNTER, @modelDate_start)
+                    AND DATEADD(MONTH, @COUNTER, @modelDate_end);
+
+            PRINT ''Records have been deleted between ''
+                + CONVERT(VARCHAR(10), DATEADD(MONTH, @COUNTER, @modelDate_start), 120)
+                + '' AND ''
+                + CONVERT(VARCHAR(10), DATEADD(MONTH, @COUNTER, @modelDate_end), 120)
+                + ''!'';
+        ';
+
+        EXEC sp_executesql
+            @SQL,
+            N'@modelDate_start DATE, @modelDate_end DATE, @COUNTER INT',
+            @modelDate_start = @modelDate_start,
+            @modelDate_end   = @modelDate_end,
+            @COUNTER         = @COUNTER;
+
+        SET @COUNTER += 1;
+    END
+END
+
+
+
+
+EXEC GetOrdersByDate
+@ActualTable='[dummy].[dbo].[sometable]',
+@ArchiveTable = '[dummy].[dbo].[othertable]',
+@modelDate_start = '2020-06-19',
+@modelDate_end ='2020-06-30',
+@date_to_check_actual = '[modelDate]',
+@MONTH_COUNTER = 0
